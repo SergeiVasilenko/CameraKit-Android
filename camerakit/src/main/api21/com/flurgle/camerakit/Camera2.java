@@ -135,6 +135,11 @@ class Camera2 extends CameraImpl {
     }
 
     @Override
+    boolean isVideoRecording() {
+        return false;
+    }
+
+    @Override
     Size getCaptureResolution() {
         if (mCaptureSize == null && mCameraCharacteristics != null) {
             TreeSet<Size> sizes = new TreeSet<>();

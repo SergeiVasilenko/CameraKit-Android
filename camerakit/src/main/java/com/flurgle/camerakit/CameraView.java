@@ -242,6 +242,10 @@ public class CameraView extends FrameLayout {
         mCameraImpl.endVideo();
     }
 
+    public boolean isVideoRecording() {
+        return mCameraImpl.isVideoRecording();
+    }
+
     public Size getPreviewSize() {
         return mCameraImpl != null ? mCameraImpl.getPreviewResolution() : null;
     }
