@@ -160,6 +160,9 @@ public class CameraView extends FrameLayout {
     }
 
     public void setFacing(@Facing int facing) {
+        if (mFacing == facing) {
+            return;
+        }
         this.mFacing = facing;
         mCameraImpl.setFacing(facing);
     }
