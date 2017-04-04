@@ -29,7 +29,7 @@ import static com.flurgle.camerakit.CameraKit.Constants.METHOD_STILL;
 @SuppressWarnings("deprecation")
 public class Camera1 extends CameraImpl {
 
-    private static final SimpleDateFormat mDateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.GERMAN);
+    private static final SimpleDateFormat mDateFormat = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss", Locale.GERMAN);
 
     private int mCameraId;
     private Camera mCamera;
