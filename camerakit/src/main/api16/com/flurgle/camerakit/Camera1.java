@@ -1,16 +1,21 @@
 package com.flurgle.camerakit;
 
+import android.content.Context;
 import android.graphics.YuvImage;
 import android.hardware.Camera;
 import android.media.CamcorderProfile;
 import android.media.MediaRecorder;
+import android.os.Environment;
 import android.view.SurfaceHolder;
 
 import java.io.File;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -23,6 +28,8 @@ import static com.flurgle.camerakit.CameraKit.Constants.METHOD_STILL;
 
 @SuppressWarnings("deprecation")
 public class Camera1 extends CameraImpl {
+
+    private static final SimpleDateFormat mDateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.GERMAN);
 
     private int mCameraId;
     private Camera mCamera;
@@ -392,12 +399,28 @@ public class Camera1 extends CameraImpl {
         mMediaRecorder.setAudioSource(MediaRecorder.AudioSource.CAMCORDER);
         mMediaRecorder.setProfile(CamcorderProfile.get(CamcorderProfile.QUALITY_480P));
 
-        mVideoFile = new File(mPreview.getView().getContext().getExternalFilesDir(null), "video.mp4");
+        File cacheDir = getCacheDir();
+        mVideoFile = new File(cacheDir, createVideoFileName());
         mMediaRecorder.setOutputFile(mVideoFile.getAbsolutePath());
 
         mMediaRecorder.setMaxDuration(20000);
         mMediaRecorder.setMaxFileSize(5000000);
         mMediaRecorder.setOrientationHint(mCameraInfo.orientation);
+    }
+
+    private File getCacheDir() {
+        File cacheDir;
+        Context context = mPreview.getView().getContext();
+        if (Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED)) {
+            cacheDir = context.getExternalCacheDir();
+        } else {
+            cacheDir = context.getCacheDir();
+        }
+        return cacheDir;
+    }
+
+    private String createVideoFileName() {
+        return "video-" + mDateFormat.format(new Date()) + ".mp4";
     }
 
     private void prepareMediaRecorder() {
