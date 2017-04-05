@@ -106,8 +106,8 @@ public class MainActivity extends AppCompatActivity implements View.OnLayoutChan
         final long startTime = System.currentTimeMillis();
         camera.setCameraListener(new CameraListener() {
             @Override
-            public void onPictureTaken(byte[] jpeg) {
-                super.onPictureTaken(jpeg);
+            public void onPictureTaken(byte[] jpeg, int rotation) {
+                super.onPictureTaken(jpeg, rotation);
                 long callbackTime = System.currentTimeMillis();
                 Bitmap bitmap = BitmapFactory.decodeByteArray(jpeg, 0, jpeg.length);
                 ResultHolder.dispose();
