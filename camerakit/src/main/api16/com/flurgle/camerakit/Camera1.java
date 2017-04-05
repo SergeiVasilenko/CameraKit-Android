@@ -6,6 +6,7 @@ import android.hardware.Camera;
 import android.media.CamcorderProfile;
 import android.media.MediaRecorder;
 import android.os.Environment;
+import android.util.Log;
 import android.view.SurfaceHolder;
 
 import java.io.File;
@@ -28,6 +29,8 @@ import static com.flurgle.camerakit.CameraKit.Constants.METHOD_STILL;
 
 @SuppressWarnings("deprecation")
 public class Camera1 extends CameraImpl {
+
+    private static final String TAG = "Camera1";
 
     private static final SimpleDateFormat mDateFormat = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss", Locale.GERMAN);
 
@@ -56,6 +59,8 @@ public class Camera1 extends CameraImpl {
 
     @Zoom
     private int mZoom;
+
+    private int mJpegQuality;
 
     Camera1(CameraListener callback, PreviewImpl preview) {
         super(callback, preview);
@@ -183,13 +188,26 @@ public class Camera1 extends CameraImpl {
     }
 
     @Override
+    void setJpegQuality(int jpegQuality) {
+        mJpegQuality = jpegQuality;
+        if (mCameraParameters != null) {
+            mCameraParameters.setJpegQuality(jpegQuality);
+            mCamera.setParameters(mCameraParameters);
+        }
+    }
+
+    @Override
     void captureImage() {
         switch (mMethod) {
             case METHOD_STANDARD:
                 mCamera.takePicture(null, null, null, new Camera.PictureCallback() {
                     @Override
                     public void onPictureTaken(byte[] data, Camera camera) {
-                        mCameraListener.onPictureTaken(data);
+                        int cameraRotation = (calculateCameraRotation(mDisplayOrientation)
+                                + (mFacing == CameraKit.Constants.FACING_FRONT ? 180 : 0)) % 360;
+                        Log.d(TAG, "onPictureTaken: jpeg: before: " + data.length + ", after: " + data.length
+                                + ", rotation: " + cameraRotation);
+                        mCameraListener.onPictureTaken(data, cameraRotation);
                         camera.startPreview();
                     }
                 });
@@ -302,8 +320,9 @@ public class Camera1 extends CameraImpl {
         mCameraParameters = mCamera.getParameters();
 
         adjustCameraParameters();
+        int rotation = calculateCameraRotation(mDisplayOrientation);
         mCamera.setDisplayOrientation(
-                calculateCameraRotation(mDisplayOrientation)
+                rotation
         );
 
         mCameraListener.onCameraOpened();
@@ -356,10 +375,18 @@ public class Camera1 extends CameraImpl {
                 getCaptureResolution().getHeight()
         );
 
-        mCameraParameters.setRotation(
-                calculateCameraRotation(mDisplayOrientation)
-                        + (mFacing == CameraKit.Constants.FACING_FRONT ? 180 : 0)
-        );
+        mCameraParameters.setJpegQuality(mJpegQuality);
+
+        int cameraRotation = (calculateCameraRotation(mDisplayOrientation)
+                        + (mFacing == CameraKit.Constants.FACING_FRONT ? 180 : 0)) % 360;
+
+        // it doesn't work on some devices
+//        mCameraParameters.setRotation(
+//                (calculateCameraRotation(mDisplayOrientation)
+//                        + (mFacing == CameraKit.Constants.FACING_FRONT ? 180 : 0)) % 360
+//        );
+
+        Log.d(TAG, "adjustCameraParameters: setRotation: " + cameraRotation);
 
         setFocus(mFocus);
         setFlash(mFlash);

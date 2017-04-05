@@ -14,7 +14,7 @@ public abstract class CameraListener {
 
     }
 
-    public void onPictureTaken(byte[] jpeg) {
+    public void onPictureTaken(byte[] jpeg, int rotation) {
 
     }
 
