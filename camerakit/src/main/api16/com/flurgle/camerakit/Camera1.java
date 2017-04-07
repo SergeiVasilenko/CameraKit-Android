@@ -380,7 +380,7 @@ public class Camera1 extends CameraImpl {
         int cameraRotation = (calculateCameraRotation(mDisplayOrientation)
                         + (mFacing == CameraKit.Constants.FACING_FRONT ? 180 : 0)) % 360;
 
-        // it doesn't work on some devices
+        // it doesn't work on some devices (do not remove it - it is just for example, which doesn't work)
 //        mCameraParameters.setRotation(
 //                (calculateCameraRotation(mDisplayOrientation)
 //                        + (mFacing == CameraKit.Constants.FACING_FRONT ? 180 : 0)) % 360

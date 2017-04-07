@@ -31,8 +31,12 @@ android {
     }
 }
 
+ext {
+    supportVersion = rootProject.ext.supportLibraryVersion;
+}
+
 dependencies {
-    compile 'com.android.support:appcompat-v7:25.0.1'
+    compile "com.android.support:appcompat-v7:$supportVersion"
 }
 
 apply from: 'https://raw.githubusercontent.com/blundell/release-android-library/master/android-release-aar.gradle'

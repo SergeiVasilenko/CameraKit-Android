@@ -19,9 +19,13 @@ android {
     }
 }
 
+ext {
+    supportVersion = rootProject.ext.supportLibraryVersion;
+}
+
 dependencies {
     compile project(':camerakit')
-    compile 'com.android.support:appcompat-v7:25.3.0'
+    compile "com.android.support:appcompat-v7:$supportVersion"
     compile 'com.jakewharton:butterknife:8.4.0'
     annotationProcessor 'com.jakewharton:butterknife-compiler:8.4.0'
 }
