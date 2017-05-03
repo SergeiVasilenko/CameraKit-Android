@@ -6,6 +6,8 @@ import android.hardware.Camera;
 import android.media.CamcorderProfile;
 import android.media.MediaRecorder;
 import android.os.Environment;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.view.SurfaceHolder;
 
@@ -62,8 +64,11 @@ public class Camera1 extends CameraImpl {
 
     private int mJpegQuality;
 
+    private Handler mHandler;
+
     Camera1(CameraListener callback, PreviewImpl preview) {
         super(callback, preview);
+        mHandler = new Handler(Looper.getMainLooper());
         preview.setCallback(new PreviewImpl.Callback() {
             @Override
             public void onSurfaceChanged() {
@@ -122,22 +127,32 @@ public class Camera1 extends CameraImpl {
     }
 
     @Override
-    void setFlash(@Flash int flash) {
+    void setFlash(@Flash final int flash) {
+        Log.i(TAG, "setFlash: " + flash);
         if (mCameraParameters != null) {
-            List<String> flashes = mCameraParameters.getSupportedFlashModes();
-            String internalFlash = new ConstantMapper.Flash(flash).map();
-            if (flashes != null && flashes.contains(internalFlash)) {
-                mCameraParameters.setFlashMode(internalFlash);
-                mFlash = flash;
-            } else {
-                String currentFlash = new ConstantMapper.Flash(mFlash).map();
-                if (flashes == null || !flashes.contains(currentFlash)) {
-                    mCameraParameters.setFlashMode(Camera.Parameters.FLASH_MODE_OFF);
-                    mFlash = FLASH_OFF;
-                }
-            }
-
+            // reset parameters
+            mCameraParameters.setFlashMode(Camera.Parameters.FLASH_MODE_OFF);
             mCamera.setParameters(mCameraParameters);
+
+            // set flash. Delay needs to change FLASH_MODE_TORCH to FLASH_MODE_ON.
+            mHandler.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    List<String> flashes = mCameraParameters.getSupportedFlashModes();
+                    String internalFlash = new ConstantMapper.Flash(flash).map();
+                    if (flashes != null && flashes.contains(internalFlash)) {
+                        mCameraParameters.setFlashMode(internalFlash);
+                        mFlash = flash;
+                    } else {
+                        String currentFlash = new ConstantMapper.Flash(mFlash).map();
+                        if (flashes == null || !flashes.contains(currentFlash)) {
+                            mCameraParameters.setFlashMode(Camera.Parameters.FLASH_MODE_OFF);
+                            mFlash = FLASH_OFF;
+                        }
+                    }
+                    mCamera.setParameters(mCameraParameters);
+                }
+            }, 200);
         } else {
             mFlash = flash;
         }
