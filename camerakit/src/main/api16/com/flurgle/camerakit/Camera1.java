@@ -138,19 +138,23 @@ public class Camera1 extends CameraImpl {
             mHandler.postDelayed(new Runnable() {
                 @Override
                 public void run() {
-                    List<String> flashes = mCameraParameters.getSupportedFlashModes();
-                    String internalFlash = new ConstantMapper.Flash(flash).map();
-                    if (flashes != null && flashes.contains(internalFlash)) {
-                        mCameraParameters.setFlashMode(internalFlash);
-                        mFlash = flash;
-                    } else {
-                        String currentFlash = new ConstantMapper.Flash(mFlash).map();
-                        if (flashes == null || !flashes.contains(currentFlash)) {
-                            mCameraParameters.setFlashMode(Camera.Parameters.FLASH_MODE_OFF);
-                            mFlash = FLASH_OFF;
+                    if (mCameraParameters != null) {
+                        List<String> flashes = mCameraParameters.getSupportedFlashModes();
+                        String internalFlash = new ConstantMapper.Flash(flash).map();
+                        if (flashes != null && flashes.contains(internalFlash)) {
+                            mCameraParameters.setFlashMode(internalFlash);
+                            mFlash = flash;
+                        } else {
+                            String currentFlash = new ConstantMapper.Flash(mFlash).map();
+                            if (flashes == null || !flashes.contains(currentFlash)) {
+                                mCameraParameters.setFlashMode(Camera.Parameters.FLASH_MODE_OFF);
+                                mFlash = FLASH_OFF;
+                            }
                         }
+                        mCamera.setParameters(mCameraParameters);
+                    } else {
+                        mFlash = flash;
                     }
-                    mCamera.setParameters(mCameraParameters);
                 }
             }, 200);
         } else {
