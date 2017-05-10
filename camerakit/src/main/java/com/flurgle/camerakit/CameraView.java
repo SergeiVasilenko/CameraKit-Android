@@ -31,9 +31,6 @@ import static com.flurgle.camerakit.CameraKit.Constants.FLASH_AUTO;
 import static com.flurgle.camerakit.CameraKit.Constants.FLASH_OFF;
 import static com.flurgle.camerakit.CameraKit.Constants.FLASH_ON;
 import static com.flurgle.camerakit.CameraKit.Constants.METHOD_STANDARD;
-import static com.flurgle.camerakit.CameraKit.Constants.PERMISSIONS_LAZY;
-import static com.flurgle.camerakit.CameraKit.Constants.PERMISSIONS_PICTURE;
-import static com.flurgle.camerakit.CameraKit.Constants.PERMISSIONS_STRICT;
 
 public class CameraView extends FrameLayout {
 
@@ -213,38 +210,11 @@ public class CameraView extends FrameLayout {
 //	}
 
     public void start() {
-        int cameraCheck = ContextCompat.checkSelfPermission(getContext(), Manifest.permission.CAMERA);
-        int audioCheck = ContextCompat.checkSelfPermission(getContext(), Manifest.permission.RECORD_AUDIO);
-
-        switch (mPermissions) {
-            case PERMISSIONS_STRICT:
-                if (cameraCheck != PackageManager.PERMISSION_GRANTED || audioCheck != PackageManager.PERMISSION_GRANTED) {
-                    requestPermissions(true, true);
-                    return;
-                }
-                break;
-
-            case PERMISSIONS_LAZY:
-                if (cameraCheck != PackageManager.PERMISSION_GRANTED) {
-                    requestPermissions(true, true);
-                    return;
-                }
-                break;
-
-            case PERMISSIONS_PICTURE:
-                if (cameraCheck != PackageManager.PERMISSION_GRANTED) {
-                    requestPermissions(true, false);
-                    return;
-                }
-                break;
+        int permissionCheck = ContextCompat.checkSelfPermission(getContext(), Manifest.permission.CAMERA);
+        if (permissionCheck == PackageManager.PERMISSION_GRANTED) {
+            mCameraImpl.start();
+        } else {
         }
-
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                mCameraImpl.start();
-            }
-        }).start();
     }
 
     public void stop() {
