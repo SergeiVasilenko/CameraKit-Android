@@ -130,7 +130,6 @@ public class MainActivity extends AppCompatActivity implements View.OnLayoutChan
             @Override
             public void onVideoTaken(File video) {
                 super.onVideoTaken(video);
-
             }
         });
 
@@ -308,4 +307,5 @@ public class MainActivity extends AppCompatActivity implements View.OnLayoutChan
 
         camera.removeOnLayoutChangeListener(this);
     }
+
 }

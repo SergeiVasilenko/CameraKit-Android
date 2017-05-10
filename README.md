@@ -1,6 +1,6 @@
 <img alt='CameraKit Header' src='.repo/camerakit-android-header.png' height='125'/>
 
-#####Originally a fork of [Google's CameraView library](https://github.com/google/cameraview).
+##### Originally a fork of [Google's CameraView library](https://github.com/google/cameraview).
 
 CameraKit is an extraordinarily easy to use utility to work with the infamous Android Camera and Camera2 APIs. Built by [Dylan McIntyre](https://github.com/dwillmc).
 
@@ -8,10 +8,7 @@ Try out all the unique features using the CameraKit Demo from the Google Play st
 
 <a href='https://play.google.com/store/apps/details?id=com.flurgle.camerakit.demo&pcampaignid=MKT-Other-global-all-co-prtnr-py-PartBadge-Mar2515-1'><img alt='Get it on Google Play' src='https://play.google.com/intl/en_us/badges/images/generic/en_badge_web_generic.png' height='80'/></a>
 
-<img src='.repo/demo1.png' width='120'/>
-<img src='.repo/demo2.png' width='120'/>
-<img src='.repo/demo3.png' width='120'/>
-<img src='.repo/demo4.png' width='120'/>
+<img src='.repo/demo1.png' width='120'/> <img src='.repo/demo2.png' width='120'/> <img src='.repo/demo3.png' width='120'/> <img src='.repo/demo4.png' width='120'/>
 
 ## Table of Contents
 
@@ -47,7 +44,7 @@ Try out all the unique features using the CameraKit Demo from the Google Play st
   - `METHOD_STILL`: a freeze frame of the `CameraView` preview (similar to SnapChat and Instagram) for devices with slower cameras.
   - **Coming soon:** `METHOD_SPEED`: automatic capture method determination based on measured speed.
 - Built-in continuous focus.
-- **Coming soon:** Built-in tap to focus.
+- Built-in tap to focus.
 - **Coming soon:** Built-in pinch to zoom.
 
 ## Setup
@@ -55,7 +52,7 @@ Try out all the unique features using the CameraKit Demo from the Google Play st
 Add __CameraKit__ to the dependencies block in your `app` level `build.gradle`:
 
 ```groovy
-compile 'com.flurgle:camerakit:0.9.13'
+compile 'com.flurgle:camerakit:0.9.17'
 ```
 
 ## Usage
@@ -138,8 +135,10 @@ camera.postDelayed(new Runnable() {
     camerakit:ckFocus="continuous"
     camerakit:ckMethod="standard"
     camerakit:ckZoom="pinch"
+    camerakit:ckPermissions="strict"
     camerakit:ckCropOutput="true"  
     camerakit:ckJpegQuality="100"
+    camerakit:ckVideoQuality="480p"
     android:adjustViewBounds="true" />
 ```
 
@@ -150,8 +149,10 @@ camera.postDelayed(new Runnable() {
 |[`ckFocus`](#ckfocus)|[`off`](#off-1) [`continuous`](#continuous) [`tap`](#tap)|`continuous`|
 |[`ckMethod`](#ckmethod)|[`standard`](#standard) [`still`](#still) [`speed`](#speed)|`standard`|
 |[`ckZoom`](#ckzoom)|[`off`](#off-2) [`pinch`](#pinch)|`off`|
+|[`ckPermissions`](#ckpermissions)|[`strict`](#strict) [`lazy`](#lazy) [`picture`](#picture`)|`strict`|
 |[`ckCropOutput`](#ckcropoutput)|[`true`](#true) [`false`](#false)|`false`|
 |[`ckJpegQuality`](#ckjpegquality)|[`0 <= n <= 100`](#ckjpegquality)|`100`|
+|[`ckVideoQuality`](#ckvideoquality)|[`max480p`](#max480p) [`max720p`](#max720p) [`max1080p`](#max1080p) [`max2160p`](#max2160p) [`highest`](#highest) [`lowest`](#lowest)|`max480p`|
 
 - - -
 
@@ -266,6 +267,29 @@ cameraView.setZoom(CameraKit.Constants.ZOOM_PINCH);
 
 - - -
 
+### `ckPermissions`
+[`strict`](#strict) [`lazy`](#lazy) [`picture`](#picture`)
+
+#### `strict`
+
+```java
+cameraView.setPermissions(CameraKit.Constants.PERMISSIONS_STRICT);
+```
+
+#### `lazy`
+
+```java
+cameraView.setPermissions(CameraKit.Constants.PERMISSIONS_LAZY);
+```
+
+#### `picture`
+
+```java
+cameraView.setPermissions(CameraKit.Constants.PERMISSIONS_PICTURE);
+```
+
+- - -
+
 ### `ckCropOutput`
 [`true`](#true) [`false`](#false)
 
@@ -287,6 +311,47 @@ cameraView.setCropOutput(false);
 
 ```java
 cameraView.setJpegQuality(100);
+```
+
+- - -
+
+### `ckVideoQuality`
+[`max480p`](#max480p) [`max720p`](#max720p) [`max1080p`](#max1080p) [`max2160p`](#max2160p) [`highest`](#highest) [`lowest`](#lowest)
+
+#### `max480p`
+
+```java
+cameraView.setVideoQuality(CameraKit.Constants.VIDEO_QUALITY_480P);
+```
+
+#### `max720p`
+
+```java
+cameraView.setVideoQuality(CameraKit.Constants.VIDEO_QUALITY_720P);
+```
+
+#### `max1080p`
+
+```java
+cameraView.setVideoQuality(CameraKit.Constants.VIDEO_QUALITY_1080P);
+```
+
+#### `max2160p`
+
+```java
+cameraView.setVideoQuality(CameraKit.Constants.VIDEO_QUALITY_2160P);
+```
+
+#### `lowest`
+
+```java
+cameraView.setVideoQuality(CameraKit.Constants.VIDEO_QUALITY_LOWEST);
+```
+
+#### `highest`
+
+```java
+cameraView.setVideoQuality(CameraKit.Constants.VIDEO_QUALITY_HIGHEST);
 ```
 
 - - -
