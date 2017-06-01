@@ -8,6 +8,7 @@ import android.content.pm.PackageManager;
 import android.content.res.TypedArray;
 import android.graphics.Rect;
 import android.graphics.YuvImage;
+import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
@@ -24,6 +25,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 
 import static com.flurgle.camerakit.CameraKit.Constants.FACING_BACK;
 import static com.flurgle.camerakit.CameraKit.Constants.FACING_FRONT;
@@ -64,6 +68,15 @@ public class CameraView extends FrameLayout {
 
     private CameraImpl mCameraImpl;
     private PreviewImpl mPreviewImpl;
+
+    private Executor mExecutor = Executors.newSingleThreadExecutor(new ThreadFactory() {
+        @Override
+        public Thread newThread(@NonNull Runnable r) {
+            return new Thread(r, "Camera");
+        }
+    });
+
+    private Handler mMainHandler = new Handler();
 
     public CameraView(@NonNull Context context) {
         super(context, null);
@@ -212,7 +225,12 @@ public class CameraView extends FrameLayout {
     public void start() {
         int permissionCheck = ContextCompat.checkSelfPermission(getContext(), Manifest.permission.CAMERA);
         if (permissionCheck == PackageManager.PERMISSION_GRANTED) {
-            mCameraImpl.start();
+            mExecutor.execute(new Runnable() {
+                @Override
+                public void run() {
+                    mCameraImpl.start();
+                }
+            });
         } else {
         }
     }
@@ -227,12 +245,12 @@ public class CameraView extends FrameLayout {
         }
         this.mFacing = facing;
 
-        new Thread(new Runnable() {
+        mExecutor.execute(new Runnable() {
             @Override
             public void run() {
                 mCameraImpl.setFacing(facing);
             }
-        }).start();
+        });
     }
 
     public void setFlash(@Flash int flash) {
@@ -362,20 +380,40 @@ public class CameraView extends FrameLayout {
         }
     }
 
+
+
     private class CameraListenerMiddleWare extends CameraListener {
 
         private CameraListener mCameraListener;
 
+        private void notifyCameraOpened() {
+            mMainHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    getCameraListener().onCameraOpened();
+                }
+            });
+        }
+
+        private void notifyCameraClosed() {
+            mMainHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    getCameraListener().onCameraClosed();
+                }
+            });
+        }
+
         @Override
         public void onCameraOpened() {
             super.onCameraOpened();
-            getCameraListener().onCameraOpened();
+            notifyCameraOpened();
         }
 
         @Override
         public void onCameraClosed() {
             super.onCameraClosed();
-            getCameraListener().onCameraClosed();
+            notifyCameraClosed();
         }
 
         @Override
@@ -416,8 +454,11 @@ public class CameraView extends FrameLayout {
 
         @NonNull
         public CameraListener getCameraListener() {
-            return mCameraListener != null ? mCameraListener : new CameraListener() {
-            };
+            if (mCameraListener == null) {
+                mCameraListener = new CameraListener() {
+                };
+            }
+            return mCameraListener;
         }
 
     }
