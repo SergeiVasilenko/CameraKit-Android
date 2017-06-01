@@ -1,6 +1,8 @@
 package com.flurgle.camerakit;
 
+import android.Manifest;
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.graphics.Rect;
 import android.graphics.YuvImage;
 import android.hardware.Camera;
@@ -8,6 +10,7 @@ import android.media.CamcorderProfile;
 import android.media.MediaRecorder;
 import android.os.Environment;
 import android.os.Handler;
+import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
@@ -76,6 +79,8 @@ public class Camera1 extends CameraImpl {
     private int mJpegQuality;
 
     private Handler mHandler;
+
+    private boolean mIsAudioEnabled;
 
     Camera1(CameraListener callback, PreviewImpl preview, Handler handler) {
         super(callback, preview);
@@ -497,9 +502,28 @@ public class Camera1 extends CameraImpl {
         mMediaRecorder.setCamera(mCamera);
 
         mMediaRecorder.setVideoSource(MediaRecorder.VideoSource.CAMERA);
-        mMediaRecorder.setAudioSource(MediaRecorder.AudioSource.DEFAULT);
+        boolean isAudioEnabled =
+                ContextCompat.checkSelfPermission(mPreview.getView().getContext(),
+                                                  Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED;
+        if (isAudioEnabled) {
+            Log.i(TAG, "initMediaRecorder: set audio source");
+            mMediaRecorder.setAudioSource(MediaRecorder.AudioSource.DEFAULT);
+        }
 
-        mMediaRecorder.setProfile(getCamcorderProfile(mVideoQuality));
+        CamcorderProfile profile = getCamcorderProfile(mVideoQuality);
+
+        mMediaRecorder.setOutputFormat(profile.fileFormat);
+        mMediaRecorder.setVideoEncoder(profile.videoCodec);
+        mMediaRecorder.setVideoEncodingBitRate(profile.videoBitRate);
+        mMediaRecorder.setVideoFrameRate(profile.videoFrameRate);
+        mMediaRecorder.setVideoSize(profile.videoFrameWidth, profile.videoFrameHeight);
+        if (isAudioEnabled) {
+            mMediaRecorder.setAudioChannels(profile.audioChannels);
+            mMediaRecorder.setAudioEncoder(profile.audioCodec);
+            mMediaRecorder.setAudioEncodingBitRate(profile.audioBitRate);
+            mMediaRecorder.setAudioSamplingRate(profile.audioSampleRate);
+        }
+
 
         File cacheDir = getCacheDir();
         mVideoFile = new File(cacheDir, createVideoFileName());
