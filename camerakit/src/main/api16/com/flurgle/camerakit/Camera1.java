@@ -153,7 +153,6 @@ public class Camera1 extends CameraImpl {
             mCamera.setParameters(mCameraParameters);
 
             // set flash. Delay needs to change FLASH_MODE_TORCH to FLASH_MODE_ON.
-            Log.d(TAG, "setFlash: postDelay");
             mHandler.postDelayed(new Runnable() {
                 @Override
                 public void run() {
@@ -176,7 +175,6 @@ public class Camera1 extends CameraImpl {
                     }
                 }
             }, 200);
-            Log.d(TAG, "setFlash: postDelay finished");
         } else {
             mFlash = flash;
         }
@@ -506,7 +504,6 @@ public class Camera1 extends CameraImpl {
                 ContextCompat.checkSelfPermission(mPreview.getView().getContext(),
                                                   Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED;
         if (isAudioEnabled) {
-            Log.i(TAG, "initMediaRecorder: set audio source");
             mMediaRecorder.setAudioSource(MediaRecorder.AudioSource.DEFAULT);
         }
 
