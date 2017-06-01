@@ -9,6 +9,7 @@ import android.content.res.TypedArray;
 import android.graphics.Rect;
 import android.graphics.YuvImage;
 import android.os.Handler;
+import android.os.HandlerThread;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
@@ -25,9 +26,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
 
 import static com.flurgle.camerakit.CameraKit.Constants.FACING_BACK;
 import static com.flurgle.camerakit.CameraKit.Constants.FACING_FRONT;
@@ -69,14 +67,13 @@ public class CameraView extends FrameLayout {
     private CameraImpl mCameraImpl;
     private PreviewImpl mPreviewImpl;
 
-    private Executor mExecutor = Executors.newSingleThreadExecutor(new ThreadFactory() {
-        @Override
-        public Thread newThread(@NonNull Runnable r) {
-            return new Thread(r, "Camera");
-        }
-    });
-
     private Handler mMainHandler = new Handler();
+
+    private HandlerThread mHandlerThread = new HandlerThread("Camera");
+    {
+        mHandlerThread.start();
+    }
+    private Handler mCameraHandler = new Handler(mHandlerThread.getLooper());
 
     public CameraView(@NonNull Context context) {
         super(context, null);
@@ -110,7 +107,7 @@ public class CameraView extends FrameLayout {
         mCameraListener = new CameraListenerMiddleWare();
 
         mPreviewImpl = new TextureViewPreview(context, this);
-        mCameraImpl = new Camera1(mCameraListener, mPreviewImpl);
+        mCameraImpl = new Camera1(mCameraListener, mPreviewImpl, mCameraHandler);
 
         setFacing(mFacing);
         setFlash(mFlash);
@@ -225,7 +222,7 @@ public class CameraView extends FrameLayout {
     public void start() {
         int permissionCheck = ContextCompat.checkSelfPermission(getContext(), Manifest.permission.CAMERA);
         if (permissionCheck == PackageManager.PERMISSION_GRANTED) {
-            mExecutor.execute(new Runnable() {
+            mCameraHandler.post(new Runnable() {
                 @Override
                 public void run() {
                     mCameraImpl.start();
@@ -236,7 +233,13 @@ public class CameraView extends FrameLayout {
     }
 
     public void stop() {
-        mCameraImpl.stop();
+//        mCameraImpl.stop();
+        mCameraHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                mCameraImpl.stop();
+            }
+        });
     }
 
     public void setFacing(@Facing final int facing) {
@@ -245,7 +248,7 @@ public class CameraView extends FrameLayout {
         }
         this.mFacing = facing;
 
-        mExecutor.execute(new Runnable() {
+        mCameraHandler.post(new Runnable() {
             @Override
             public void run() {
                 mCameraImpl.setFacing(facing);
@@ -253,29 +256,58 @@ public class CameraView extends FrameLayout {
         });
     }
 
-    public void setFlash(@Flash int flash) {
+    public void setFlash(@Flash final int flash) {
         this.mFlash = flash;
-        mCameraImpl.setFlash(flash);
+        mCameraHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                mCameraImpl.setFlash(flash);
+            }
+        });
     }
 
     public void setFocus(@Focus int focus) {
         this.mFocus = focus;
         if (this.mFocus == CameraKit.Constants.FOCUS_TAP_WITH_MARKER) {
-            mCameraImpl.setFocus(CameraKit.Constants.FOCUS_TAP);
+            mCameraHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    mCameraImpl.setFocus(CameraKit.Constants.FOCUS_TAP);
+                }
+            });
+//            mCameraImpl.setFocus(CameraKit.Constants.FOCUS_TAP);
             return;
         }
 
-        mCameraImpl.setFocus(mFocus);
+        mCameraHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                mCameraImpl.setFocus(mFocus);
+            }
+        });
+
     }
 
     public void setMethod(@Method int method) {
         this.mMethod = method;
-        mCameraImpl.setMethod(mMethod);
+        mCameraHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                mCameraImpl.setMethod(mMethod);
+            }
+        });
+
     }
 
     public void setZoom(@Zoom int zoom) {
         this.mZoom = zoom;
-        mCameraImpl.setZoom(mZoom);
+        mCameraHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                mCameraImpl.setZoom(mZoom);
+            }
+        });
+
     }
 
     public void setPermissions(@Permissions int permissions) {
@@ -335,15 +367,30 @@ public class CameraView extends FrameLayout {
     }
 
     public void captureImage() {
-        mCameraImpl.captureImage();
+        mCameraHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                mCameraImpl.captureImage();
+            }
+        });
     }
 
     public void startRecordingVideo() {
-        mCameraImpl.startVideo();
+        mCameraHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                mCameraImpl.startVideo();
+            }
+        });
     }
 
     public void stopRecordingVideo() {
-        mCameraImpl.endVideo();
+        mCameraHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                mCameraImpl.endVideo();
+            }
+        });
     }
 
     public boolean isVideoRecording() {
@@ -380,7 +427,11 @@ public class CameraView extends FrameLayout {
         }
     }
 
-
+    public void destroy() {
+        mCameraHandler.removeCallbacksAndMessages(null);
+        mMainHandler.removeCallbacksAndMessages(null);
+        mHandlerThread.quit();
+    }
 
     private class CameraListenerMiddleWare extends CameraListener {
 
@@ -417,35 +468,61 @@ public class CameraView extends FrameLayout {
         }
 
         @Override
-        public void onPictureTaken(byte[] jpeg, int rotation) {
+        public void onPictureTaken(final byte[] jpeg, final int rotation) {
             super.onPictureTaken(jpeg, rotation);
             if (mCropOutput) {
-                int width = mMethod == METHOD_STANDARD ? mCameraImpl.getCaptureResolution().getWidth() : mCameraImpl.getPreviewResolution().getWidth();
-                int height = mMethod == METHOD_STANDARD ? mCameraImpl.getCaptureResolution().getHeight() : mCameraImpl.getPreviewResolution().getHeight();
-                AspectRatio outputRatio = AspectRatio.of(getWidth(), getHeight());
-                getCameraListener().onPictureTaken(new CenterCrop(jpeg, outputRatio, mJpegQuality).getJpeg(), rotation);
+                final int width = mMethod == METHOD_STANDARD ? mCameraImpl.getCaptureResolution().getWidth() : mCameraImpl.getPreviewResolution().getWidth();
+                final int height = mMethod == METHOD_STANDARD ? mCameraImpl.getCaptureResolution().getHeight() : mCameraImpl.getPreviewResolution().getHeight();
+                final AspectRatio outputRatio = AspectRatio.of(getWidth(), getHeight());
+                mMainHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        getCameraListener().onPictureTaken(new CenterCrop(jpeg, outputRatio, mJpegQuality).getJpeg(), rotation);
+                    }
+                });
+
             } else {
-                getCameraListener().onPictureTaken(jpeg, rotation);
+                mMainHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        getCameraListener().onPictureTaken(jpeg, rotation);
+                    }
+                });
             }
         }
 
         @Override
-        public void onPictureTaken(YuvImage yuv) {
+        public void onPictureTaken(final YuvImage yuv) {
             super.onPictureTaken(yuv);
             if (mCropOutput) {
-                AspectRatio outputRatio = AspectRatio.of(getWidth(), getHeight());
-                getCameraListener().onPictureTaken(new CenterCrop(yuv, outputRatio, mJpegQuality).getJpeg(), 0);
+                final AspectRatio outputRatio = AspectRatio.of(getWidth(), getHeight());
+                mMainHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        getCameraListener().onPictureTaken(new CenterCrop(yuv, outputRatio, mJpegQuality).getJpeg(), 0);
+                    }
+                });
             } else {
-                ByteArrayOutputStream out = new ByteArrayOutputStream();
+                final ByteArrayOutputStream out = new ByteArrayOutputStream();
                 yuv.compressToJpeg(new Rect(0, 0, yuv.getWidth(), yuv.getHeight()), mJpegQuality, out);
-                getCameraListener().onPictureTaken(out.toByteArray(), 0);
+                mMainHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        getCameraListener().onPictureTaken(out.toByteArray(), 0);
+                    }
+                });
             }
         }
 
         @Override
-        public void onVideoTaken(File video) {
+        public void onVideoTaken(final File video) {
             super.onVideoTaken(video);
-            getCameraListener().onVideoTaken(video);
+            mMainHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    getCameraListener().onVideoTaken(video);
+                }
+            });
         }
 
         public void setCameraListener(@Nullable CameraListener cameraListener) {

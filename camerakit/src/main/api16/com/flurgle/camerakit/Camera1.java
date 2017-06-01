@@ -8,7 +8,6 @@ import android.media.CamcorderProfile;
 import android.media.MediaRecorder;
 import android.os.Environment;
 import android.os.Handler;
-import android.os.Looper;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
@@ -78,9 +77,10 @@ public class Camera1 extends CameraImpl {
 
     private Handler mHandler;
 
-    Camera1(CameraListener callback, PreviewImpl preview) {
+    Camera1(CameraListener callback, PreviewImpl preview, Handler handler) {
         super(callback, preview);
-        mHandler = new Handler(Looper.getMainLooper());
+        // same looper but another task queue
+        mHandler = new Handler(handler.getLooper());
         preview.setCallback(new PreviewImpl.Callback() {
             @Override
             public void onSurfaceChanged() {
@@ -148,6 +148,7 @@ public class Camera1 extends CameraImpl {
             mCamera.setParameters(mCameraParameters);
 
             // set flash. Delay needs to change FLASH_MODE_TORCH to FLASH_MODE_ON.
+            Log.d(TAG, "setFlash: postDelay");
             mHandler.postDelayed(new Runnable() {
                 @Override
                 public void run() {
@@ -170,6 +171,7 @@ public class Camera1 extends CameraImpl {
                     }
                 }
             }, 200);
+            Log.d(TAG, "setFlash: postDelay finished");
         } else {
             mFlash = flash;
         }
@@ -389,12 +391,14 @@ public class Camera1 extends CameraImpl {
 
     private void releaseCamera() {
         if (mCamera != null) {
+            Log.d(TAG, "releaseCamera: ");
             mCamera.release();
             mCamera = null;
             mCameraParameters = null;
             mPreviewSize = null;
             mCaptureSize = null;
             mCameraListener.onCameraClosed();
+            mHandler.removeCallbacksAndMessages(null);
         }
     }
 
