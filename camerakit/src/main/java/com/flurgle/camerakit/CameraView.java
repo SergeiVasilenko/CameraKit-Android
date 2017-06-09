@@ -9,7 +9,6 @@ import android.content.res.TypedArray;
 import android.graphics.Rect;
 import android.graphics.YuvImage;
 import android.os.Handler;
-import android.os.HandlerThread;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
@@ -69,19 +68,16 @@ public class CameraView extends FrameLayout {
 
     private Handler mMainHandler = new Handler();
 
-    private HandlerThread mHandlerThread = new HandlerThread("Camera");
-    {
-        mHandlerThread.start();
-    }
-    private Handler mCameraHandler = new Handler(mHandlerThread.getLooper());
+    private Handler mCameraHandler;
 
     public CameraView(@NonNull Context context) {
-        super(context, null);
+        this(context, null);
     }
 
     @SuppressWarnings("all")
     public CameraView(@NonNull Context context, @Nullable AttributeSet attrs) {
         super(context, attrs);
+        mCameraHandler = CameraHandlerProvider.getHandler();
         if (attrs != null) {
             TypedArray a = context.getTheme().obtainStyledAttributes(
                     attrs,
@@ -319,9 +315,14 @@ public class CameraView extends FrameLayout {
         mCameraImpl.setVideoQuality(mVideoQuality);
     }
 
-    public void setJpegQuality(int jpegQuality) {
+    public void setJpegQuality(final int jpegQuality) {
         this.mJpegQuality = jpegQuality;
-        mCameraImpl.setJpegQuality(jpegQuality);
+        mCameraHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                mCameraImpl.setJpegQuality(jpegQuality);
+            }
+        });
     }
 
     public void setCropOutput(boolean cropOutput) {
@@ -430,7 +431,6 @@ public class CameraView extends FrameLayout {
     public void destroy() {
         mCameraHandler.removeCallbacksAndMessages(null);
         mMainHandler.removeCallbacksAndMessages(null);
-        mHandlerThread.quit();
     }
 
     private class CameraListenerMiddleWare extends CameraListener {
@@ -457,19 +457,16 @@ public class CameraView extends FrameLayout {
 
         @Override
         public void onCameraOpened() {
-            super.onCameraOpened();
             notifyCameraOpened();
         }
 
         @Override
         public void onCameraClosed() {
-            super.onCameraClosed();
             notifyCameraClosed();
         }
 
         @Override
         public void onPictureTaken(final byte[] jpeg, final int rotation) {
-            super.onPictureTaken(jpeg, rotation);
             if (mCropOutput) {
                 final int width = mMethod == METHOD_STANDARD ? mCameraImpl.getCaptureResolution().getWidth() : mCameraImpl.getPreviewResolution().getWidth();
                 final int height = mMethod == METHOD_STANDARD ? mCameraImpl.getCaptureResolution().getHeight() : mCameraImpl.getPreviewResolution().getHeight();
@@ -493,7 +490,6 @@ public class CameraView extends FrameLayout {
 
         @Override
         public void onPictureTaken(final YuvImage yuv) {
-            super.onPictureTaken(yuv);
             if (mCropOutput) {
                 final AspectRatio outputRatio = AspectRatio.of(getWidth(), getHeight());
                 mMainHandler.post(new Runnable() {

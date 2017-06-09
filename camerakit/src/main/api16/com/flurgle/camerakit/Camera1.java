@@ -90,8 +90,13 @@ public class Camera1 extends CameraImpl {
             @Override
             public void onSurfaceChanged() {
                 if (mCamera != null) {
-                    setupPreview();
-                    adjustCameraParameters();
+                    mHandler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            setupPreview();
+                            adjustCameraParameters();
+                        }
+                    });
                 }
             }
         });
@@ -349,6 +354,10 @@ public class Camera1 extends CameraImpl {
                     mPreviewSize = size;
                     break;
                 }
+            }
+        } else {
+            if (mCameraParameters == null) {
+                Log.w(TAG, "getPreviewResolution: mCameraParameters is null");
             }
         }
 
